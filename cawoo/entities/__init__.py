@@ -3,21 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
-class SettableBaseModel(BaseModel):
-    """
-    `BaseModel`は`set()`されることができるように
-    `__eq__`と`__hash__`を実装している。
-    """
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            # don't attempt to compare against unrelated types
-            return NotImplemented
-        return self.json() == other.json()
-
-    def __hash__(self):
-        return hash(self.json())
+from .selector import Selector, SelectableBaseModel
 
 
 class TimePeriod(BaseModel):
@@ -30,8 +16,8 @@ class WorkPeriod(BaseModel):
     rest_time: timedelta
 
 
-class AttendanceRaw(WorkPeriod, SettableBaseModel):
-    people: str
+class AttendanceRaw(SelectableBaseModel, WorkPeriod):
+    pass
 
 
 class WorkHour(BaseModel):
@@ -45,5 +31,21 @@ class WorkHour(BaseModel):
     late_night_hours: Optional[timedelta]
 
 
-class Attendance(WorkHour, SettableBaseModel):
-    people: str
+class Attendance(SelectableBaseModel, WorkHour):
+    pass
+
+
+class Result(BaseModel):
+    err: list[str] = []
+    res: Optional[Selector[Attendance]]
+    attendance_raw: Selector[AttendanceRaw]
+
+    def __init__(self, *, err=[], res=[], attendance_raw):
+        super().__init__(
+            err=err,
+            res=Selector[Attendance](res),
+            attendance_raw=Selector[AttendanceRaw](attendance_raw)
+        )
+
+    class Config:
+        arbitrary_types_allowed = True
