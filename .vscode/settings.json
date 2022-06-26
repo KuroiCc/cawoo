@@ -3,6 +3,7 @@
         "cawoo",
         "expfr",
         "pydantic",
+        "secho",
         "typer"
     ],
     "python.testing.unittestArgs": [
@@ -15,6 +16,9 @@
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
     "conventionalCommits.scopes": [
-        "config"
+        "config",
+        "calculator",
+        "entities",
+        "cli"
     ]
 }
