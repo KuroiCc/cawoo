@@ -29,7 +29,7 @@ class SelectableBaseModel(BaseModel):
 year = month = day = int
 T = TypeVar('T', bound=BaseModel)
 DateGroup = dict[year, dict[month, dict[day, list[T]]]]
-SelectableType = TypeVar('SelectableType', bound=SelectableBaseModel)
+SelectableType = TypeVar('SelectableType')
 
 
 class Selector(Generic[SelectableType]):
@@ -50,6 +50,8 @@ class Selector(Generic[SelectableType]):
 
     def append(self, item: SelectableType):
         # ? ここでitemの型をチェックする方法ある？
+        # ? この関数は, `__init__`期間も呼ばれるので
+        # ? `self.__orig_class__.__args__[0].__name__`などは使えない
         self._list.append(item)
 
         if item.people not in self._group_by_people:
@@ -70,48 +72,54 @@ class Selector(Generic[SelectableType]):
         # self.group_by_day[dt.year][dt.month][dt.day].append(item)
 
     @overload
-    def get(self, *, people: str) -> List[SelectableType]:
+    def get(self, *, people: str) -> Selector[SelectableType]:
         return self._group_by_people[people]
 
     @overload
-    def get(self, *, date: date) -> List[SelectableType]:
+    def get(self, *, date: date) -> Selector[SelectableType]:
         ...
 
     @overload
-    def get(self, *, people: str, date: date) -> List[SelectableType]:
+    def get(self, *, people: str, date: date) -> Selector[SelectableType]:
         ...
 
     @overload
-    def get(self, *, time_period: TimePeriod) -> List[SelectableType]:
+    def get(self, *, time_period: TimePeriod) -> Selector[SelectableType]:
         ...
 
     @overload
-    def get(self, *, people: str, time_period: TimePeriod) -> List[SelectableType]:
+    def get(self, *, people: str, time_period: TimePeriod) -> Selector[SelectableType]:
         ...
 
     def get(self, *, people: str = None, date: date = None, time_period: TimePeriod = None):
+        if date and time_period:
+            raise ValueError('date and time_period are mutually exclusive')
         if people is not None:
             if date is not None:
                 # people, date
-                return list(set(self._group_by_date[date]) & set(self._group_by_people[people]))
+                return Selector(
+                    list(set(self._group_by_date[date]) & set(self._group_by_people[people]))
+                )
             elif time_period is not None:
                 # people, time_period
-                return list(
-                    set(self._group_by_people[people])
-                    & set(self._get_by_time_period(time_period=time_period))  # noqa: W503
+                return Selector(
+                    list(
+                        set(self._group_by_people[people])
+                        & set(self._get_by_time_period(time_period=time_period))  # noqa: W503
+                    )
                 )
             else:
                 # people
-                return self._group_by_people[people]
+                return Selector(self._group_by_people[people])
         elif date is not None:
             # date
-            return self._group_by_date[date]
+            return Selector(self._group_by_date[date])
         elif time_period is not None:
             # time_period
-            return self._get_by_time_period(time_period=time_period)
+            return Selector(self._get_by_time_period(time_period=time_period))
         else:
             # all None
-            return self._list
+            return self
 
     def _get_by_time_period(self, *, time_period: TimePeriod) -> List[SelectableType]:
         return [
