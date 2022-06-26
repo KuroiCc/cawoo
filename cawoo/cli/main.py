@@ -86,6 +86,7 @@ def main(
 
     # errと状態が予定の出勤を出力
     for people, work_hours in res.res._group_by_people.items():
+        work_hours.sort(key=lambda x: x.date)
         typer.echo(
             f'==={typer.style(f" {people} ", bg=typer.colors.BLUE)}=================================='
         )
