@@ -1,12 +1,13 @@
 import csv
 import re
 from pathlib import Path
-from datetime import timedelta, time
+from datetime import timedelta
 
 from ..interface import IParser
 from ..time_period import TimePeriodParser
-from cawoo.entities import Result, AttendanceRaw
-from cawoo.utils import get_work_date
+from ...entities import Result, AttendanceRaw
+from ...utils import get_work_date
+from ...config import settings
 
 
 class NotionCsvParser(IParser):
@@ -32,9 +33,8 @@ class NotionCsvParser(IParser):
                         raise ValueError('not attended')
                     # 出勤日時形式変換　str -> TimePeriod
                     time_period = cls._parse_time_period(row[work_hour_key])
-                    # TODO: time(8, 0)を指定できるようにする
                     res.append(AttendanceRaw(  # yapf: disable
-                        date=get_work_date(time_period, time(8, 0)),
+                        date=get_work_date(time_period, settings.OPENING_TIME),
                         people=row[people],
                         working_period=time_period,
                         rest_time=timedelta(

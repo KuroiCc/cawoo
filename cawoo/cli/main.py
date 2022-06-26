@@ -5,6 +5,7 @@ import typer
 
 from ..parser import parsers, ParserType
 from ..entities import TimePeriod
+from ..config import settings
 
 cli_app = typer.Typer(add_completion=False)
 
@@ -27,12 +28,28 @@ def main(
         '-t',
         help='Specify the type of SRC (現在はnotion_csvのみ対応)',
     ),
+    opening_time: datetime = typer.Option(
+        None,
+        '--opening-time',
+        help='Set opening time',
+        formats=['%H:%M'],
+    ),
+    # notion_api_key: str = typer.Option(
+    #     None,
+    #     '--notion-api-key',
+    #     help='Set Notion API key',
+    # )
 ):
     """
     notionからの勤怠表を集計する\n
     ! いかなる場合において休憩時間は通常勤務時間としてカウントする
     """
     # TODO: 将来notionのAPIからのデータ取得も考える（可能なら）
+    if opening_time:
+        settings.OPENING_TIME = opening_time.time()
+    # if notion_api_key:
+    #     settings.NOTION_API_KEY = notion_api_key
+
     try:
         parser = parsers[src_type]
     except ValueError as e:
