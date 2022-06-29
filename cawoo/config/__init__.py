@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     OPENING_TIME = time(8, 0)
     WORKING_HOURS = 8
     LATE_NIGHT_TIME = time(22, 0)
-    NOTION_API_KEY: str
+    # NOTION_API_KEY: str = "<your-key>"
 
     class Config:
         env_file = 'cawoo/.env'
